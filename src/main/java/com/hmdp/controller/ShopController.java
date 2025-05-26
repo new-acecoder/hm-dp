@@ -11,10 +11,9 @@ import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
 
-/**
- * <p>
- * 前端控制器
- * </p>
+
+/**商铺控制器
+ * @author Ace
  */
 @RestController
 @RequestMapping("/shop")
@@ -30,7 +29,7 @@ public class ShopController {
      */
     @GetMapping("/{id}")
     public Result queryShopById(@PathVariable("id") Long id) {
-        return Result.ok(shopService.getById(id));
+        return shopService.queryById(id);
     }
 
     /**

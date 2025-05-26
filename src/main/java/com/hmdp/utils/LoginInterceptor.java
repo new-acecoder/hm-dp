@@ -1,16 +1,8 @@
 package com.hmdp.utils;
 
-import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.util.StrUtil;
-import com.hmdp.dto.UserDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.servlet.HandlerInterceptor;
-
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
 
 /**
  * @author Ace
@@ -19,46 +11,23 @@ import java.util.concurrent.TimeUnit;
  */
 public class LoginInterceptor implements HandlerInterceptor {
 
-
-    private StringRedisTemplate stringRedisTemplate;
-
-    public LoginInterceptor(StringRedisTemplate stringRedisTemplate) {
-        this.stringRedisTemplate = stringRedisTemplate;
-    }
-
+    /**
+     * 此拦截器不关心 Token 的具体内容，只在意 ThreadLocal 中是否有用户
+     * @param request
+     * @param response
+     * @param handler
+     * @return
+     * @throws Exception
+     */
     @Override
     public boolean preHandle(HttpServletRequest request , HttpServletResponse response,Object handler) throws Exception {
-        //1.获取请求头中的token
-        String token = request.getHeader("authorization");
-        if(StrUtil.isBlank(token)){
-            // 如果token为空，拦截请求
-            // 设置状态码为401 Unauthorized
+        //1.判断是否需要拦截(Tread Local中是否有用户信息)
+        if (UserHolder.getUser() == null) {
+            //没有，需要拦截，设置状态码为401
             response.setStatus(401);
             return false;
         }
-        //2. 基于token获取redis中的用户信息
-        String key = RedisConstants.LOGIN_USER_KEY + token;
-        Map<Object, Object> userMap = stringRedisTemplate.opsForHash().entries(key);
-        //3.判断用户是否存在
-        if (userMap.isEmpty()) {
-            //4.用户不存在，拦截
-            // 设置状态码为401 Unauthorized
-            response.setStatus(401);
-            return false;
-        }
-        //5. 将查询到的HashMap类型的用户信息转换为UserDTO对象
-        UserDTO userDTO = BeanUtil.fillBeanWithMap(userMap,new UserDTO(), false);
-        //6.存在，把用户信息存入ThreadLocal
-        UserHolder.saveUser(userDTO);
-        //7.刷新token有效期
-        stringRedisTemplate.expire(key, RedisConstants.LOGIN_USER_TTL, TimeUnit.MINUTES);
-        //8.放行请求
+        //2.如果有用户信息，放行请求
         return true;
-    }
-
-    @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
-        //移除用户信息
-        UserHolder.removeUser();
     }
 }

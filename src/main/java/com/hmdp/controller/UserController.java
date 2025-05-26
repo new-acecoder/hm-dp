@@ -4,26 +4,29 @@ package com.hmdp.controller;
 import com.hmdp.dto.LoginFormDTO;
 import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
-import com.hmdp.entity.User;
 import com.hmdp.entity.UserInfo;
 import com.hmdp.service.IUserInfoService;
 import com.hmdp.service.IUserService;
 import com.hmdp.utils.UserHolder;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpSession;
 
-
-/**
- * @author: Ace
- * @date: 2025/5/26
+/**用户控制器
+ * 提供用户相关的操作接口，如发送验证码、登录、登出等功能。
+ * 该类使用了 Lombok 的 @Slf4j 注解来简化日志记录。
+ * 使用 @RestController 注解表示这是一个 RESTful 风格的控制器，
+ * 并使用 @RequestMapping 注解定义了基础路径为 "/user"。
+ * @author Ace
+ *
  */
+
 @Slf4j
 @RestController
 @RequestMapping("/user")
+
 public class UserController {
 
     @Resource
