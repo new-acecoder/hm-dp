@@ -14,9 +14,8 @@ import jakarta.servlet.http.HttpSession;
 
 
 /**
- * <p>
- * 前端控制器
- * </p>
+ * @author: Ace
+ * @date: 2025/5/26
  */
 @Slf4j
 @RestController
@@ -31,21 +30,24 @@ public class UserController {
 
     /**
      * 发送手机验证码
+     * @param phone
+     * @param session
+     * @return
      */
     @PostMapping("code")
     public Result sendCode(@RequestParam("phone") String phone, HttpSession session) {
-        // TODO 发送短信验证码并保存验证码
-        return Result.fail("功能未完成");
+        // 发送短信验证码并保存验证码
+        return userService.sendCode(phone, session);
     }
-
     /**
      * 登录功能
-     * @param loginForm 登录参数，包含手机号、验证码；或者手机号、密码
+     * @param loginForm
+     * @param session
      */
     @PostMapping("/login")
     public Result login(@RequestBody LoginFormDTO loginForm, HttpSession session){
-        // TODO 实现登录功能
-        return Result.fail("功能未完成");
+        //实现登录功能
+        return userService.login(loginForm, session);
     }
 
     /**
