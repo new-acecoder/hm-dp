@@ -5,6 +5,10 @@ import com.hmdp.entity.Shop;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 
+/**
+ * 商铺服务接口
+ * @author 35066
+ */
 public interface IShopService extends IService<Shop> {
 
     /**
