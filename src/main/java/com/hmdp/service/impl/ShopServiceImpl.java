@@ -10,8 +10,11 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import static com.hmdp.utils.RedisConstants.CACHE_SHOP_KEY;
+import java.util.concurrent.TimeUnit;
+
+import static com.hmdp.utils.RedisConstants.*;
 
 
 /**
@@ -37,18 +40,48 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         String shopJson = stringRedisTemplate.opsForValue().get(key);
         //2.判断是否存在
         if(StrUtil.isNotBlank(shopJson)){
-            //3.如果存在，直接返回
+            //2.1如果真实存在，直接返回
             Shop shop = JSONUtil.toBean(shopJson, Shop.class);
+            //2.2将查询到的商铺信息返回
             return Result.ok(shop);
         }
-        //4.如果不存在，根据id查询数据库
-        Shop shop = getById(id);
-        if(shop == null){
-            //5.数据库中不存在，则返回错误信息
+        //3.判断命中的是否是空值
+        if (shopJson != null) {
+            //3.1.如果命中的是空值""，返回错误信息
             return Result.fail("商铺不存在");
         }
-        //6.数据库中存在，则将数据写入redis，并返回商铺信息
-        stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(shop));
+        //4..如果不存在，根据id查询数据库
+        Shop shop = getById(id);
+        //5..如果数据库中不存在该商铺信息
+        if(shop == null){
+            //5.1将空值写入redis，设置有效时间，避免缓存穿透
+            stringRedisTemplate.opsForValue().set(key, "",CACHE_NULL_TTL, TimeUnit.MINUTES);
+            //5.2返回错误信息
+            return Result.fail("商铺不存在");
+        }
+        //6.数据库中存在，则将数据写入redis，并设置有效时间，并返回商铺信息
+        stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(shop),CACHE_SHOP_TTL, TimeUnit.MINUTES);
         return Result.ok(shop);
+    }
+
+    /**
+     * 更新商铺信息
+     * @param shop
+     * @return
+     */
+    @Transactional
+    @Override
+    public Result update(Shop shop) {
+        Long id = shop.getId();
+        if (id == null) {
+            return Result.fail("商铺id不能为空");
+        }
+        //1.先更新数据库
+        updateById(shop);
+        //2.删除缓存
+        String key = CACHE_SHOP_KEY + id;
+        stringRedisTemplate.delete(key);
+        log.debug("删除缓存");
+        return Result.ok();
     }
 }

@@ -48,6 +48,7 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> i
                     shopTypeListJson,
                     new TypeReference<>() {
                     });
+            //log.debug("从Redis中查询商铺类型列表");
             return Result.ok(shopTypeList);
         }
         //4.如果不存在，查询数据库
@@ -58,6 +59,7 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> i
 
         //6.数据库中存在，则将数据写入redis，并返回商铺信息
         stringRedisTemplate.opsForValue().set(key, MAPPER.writeValueAsString(shopTypeList));
+        //log.debug("从数据库中查询商铺类型列表");
         return Result.ok(shopTypeList);
     }
 }
