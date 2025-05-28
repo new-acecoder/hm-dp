@@ -4,8 +4,12 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
+/**
+ * @author Ace
+ */
 @Data
-public class RedisData {
+public class RedisData<T> {
     private LocalDateTime expireTime;
-    private Object data;
+    // 缓存数据
+    private T data;
 }
