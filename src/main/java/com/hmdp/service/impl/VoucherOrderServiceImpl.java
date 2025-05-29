@@ -46,9 +46,10 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             return Result.fail("库存不足");
         }
         //5.扣减库存
+        //添加乐观锁，防止超卖,MYSQL中执行写的操作时默认加排他锁
         boolean success = seckillVoucherService.update()
                 .setSql("stock = stock - 1")
-                .eq("voucher_id", voucherId)
+                .eq("voucher_id", voucherId).gt("stock", 0)
                 .update();
         if(!success){
             return Result.fail("库存不足");
