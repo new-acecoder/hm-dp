@@ -1,10 +1,11 @@
 package com.hmdp.utils;
 
-import cn.hutool.core.lang.TypeReference;
+
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -84,7 +85,7 @@ public class CacheClient {
         //1.从redis中查询商铺信息
         String json = stringRedisTemplate.opsForValue().get(key);
         //2.判断是否存在
-        if(StrUtil.isNotBlank(json)){
+        if( StrUtil.isNotBlank(json)) {
             //2.1如果真实存在，直接返回
             return JSONUtil.toBean(json, type);
         }
@@ -124,9 +125,11 @@ public class CacheClient {
         }
         //3.如果命中，需要先将json反序列化为RedisData对象
         //由于泛型擦除，无法直接反序列化为有R类型的RedisData，所以需要先反序列化为RedisData对象
-        RedisData<R> redisData = JSONUtil.toBean(json, new TypeReference<RedisData<R>>() {}, false);
+        //RedisData<R> redisData = JSONUtil.toBean(json, new TypeReference<RedisData<R>>() {}, false);
+        RedisData<R> redisData= JSON.parseObject(json, new TypeReference<RedisData<R>>() {});
         //这里的getData()方法返回的实际上是JSONObject
-        R r = JSONUtil.toBean((JSONObject) redisData.getData(), type);
+        //R r = JSONUtil.toBean((JSONObject) redisData.getData(), type);
+        R r = JSON.parseObject((redisData.getData().toString()), type);
         LocalDateTime expireTime = redisData.getExpireTime();
         //4.判断是否过期
         if(expireTime.isAfter(LocalDateTime.now())){
@@ -145,7 +148,9 @@ public class CacheClient {
                 try {
                     // 再次判断缓存是否过期，避免重复重建
                     String json2 = stringRedisTemplate.opsForValue().get(key);
-                    RedisData<R> redisData2 =  JSONUtil.toBean(json2, new TypeReference<RedisData<R>>() {}, false);
+                    //RedisData<R> redisData2 =  JSONUtil.toBean(json2, new TypeReference<RedisData<R>>() {}, false);
+                    RedisData<R> redisData2= JSON.parseObject(json, new TypeReference<RedisData<R>>() {});
+                    assert redisData2 != null;
                     if (redisData2.getExpireTime().isBefore(LocalDateTime.now())) {
                         //重新查询数据库
                         R r2 = dbFallback.apply(id);
@@ -188,13 +193,12 @@ public class CacheClient {
         String json = stringRedisTemplate.opsForValue().get(key);
         // 2. 判断是否命中缓存
         if (StrUtil.isNotBlank(json)) {
-            return JSONUtil.toBean(json, type);
+            return JSON.parseObject(json, type);
         }
         // 3. 判断是否是空值
         if (json != null) {
             return null;
         }
-
         // 4. 缓存未命中，尝试获取互斥锁
         String lockKey = LOCK_SHOP_KEY + id;
         R r = null;
@@ -209,7 +213,7 @@ public class CacheClient {
             // 获取锁成功，再次查询 Redis，避免重复构建
             String cacheJson = stringRedisTemplate.opsForValue().get(key);
             if (StrUtil.isNotBlank(cacheJson)) {
-                return JSONUtil.toBean(cacheJson, type);
+                return JSON.parseObject(cacheJson, type);
             }
 
             // 查询数据库
