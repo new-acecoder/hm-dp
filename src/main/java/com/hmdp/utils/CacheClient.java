@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.Type;
 import java.time.LocalDateTime;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -111,7 +112,7 @@ public class CacheClient {
     public <R,ID> R queryWithLogicalExpire(
             String keyPrefix,
             ID id,
-            Class<R> type,
+            Type type,
             Function<ID, R> dbFallback,
             Long time,
             TimeUnit unit){
@@ -124,12 +125,8 @@ public class CacheClient {
             return null;
         }
         //3.如果命中，需要先将json反序列化为RedisData对象
-        //由于泛型擦除，无法直接反序列化为有R类型的RedisData，所以需要先反序列化为RedisData对象
-        //RedisData<R> redisData = JSONUtil.toBean(json, new TypeReference<RedisData<R>>() {}, false);
-        RedisData<R> redisData= JSON.parseObject(json, new TypeReference<RedisData<R>>() {});
-        //这里的getData()方法返回的实际上是JSONObject
-        //R r = JSONUtil.toBean((JSONObject) redisData.getData(), type);
-        R r = JSON.parseObject((redisData.getData().toString()), type);
+        RedisData<R> redisData= JSON.parseObject(json, type);
+        R r = redisData.getData();
         LocalDateTime expireTime = redisData.getExpireTime();
         //4.判断是否过期
         if(expireTime.isAfter(LocalDateTime.now())){
@@ -149,7 +146,7 @@ public class CacheClient {
                     // 再次判断缓存是否过期，避免重复重建
                     String json2 = stringRedisTemplate.opsForValue().get(key);
                     //RedisData<R> redisData2 =  JSONUtil.toBean(json2, new TypeReference<RedisData<R>>() {}, false);
-                    RedisData<R> redisData2= JSON.parseObject(json, new TypeReference<RedisData<R>>() {});
+                    RedisData<R> redisData2= JSON.parseObject(json2, new TypeReference<RedisData<R>>() {});
                     assert redisData2 != null;
                     if (redisData2.getExpireTime().isBefore(LocalDateTime.now())) {
                         //重新查询数据库
