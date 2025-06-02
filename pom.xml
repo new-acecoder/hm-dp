@@ -92,9 +92,9 @@
             <artifactId>aspectjweaver</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.10.1</version>  <!-- 可根据需要选择版本 -->
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+            <version>3.48.0</version>
         </dependency>
 
     </dependencies>
