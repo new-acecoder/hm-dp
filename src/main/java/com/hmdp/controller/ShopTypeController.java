@@ -24,7 +24,6 @@ public class ShopTypeController {
 
     @GetMapping("list")
     public Result queryTypeList() throws JsonProcessingException {
-
         return typeService.queryTypeList();
     }
 }
