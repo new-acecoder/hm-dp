@@ -22,6 +22,11 @@ public class ShopTypeController {
     @Resource
     private IShopTypeService typeService;
 
+    /**
+     * 查询商铺类型列表
+     * @return 商铺类型列表
+     * @throws JsonProcessingException 异常
+     */
     @GetMapping("list")
     public Result queryTypeList() throws JsonProcessingException {
         return typeService.queryTypeList();
