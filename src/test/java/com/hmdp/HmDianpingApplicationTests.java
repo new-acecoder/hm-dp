@@ -13,11 +13,15 @@ import com.hmdp.utils.RedisIdWorker;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.geo.Point;
+import org.springframework.data.redis.connection.RedisGeoCommands;
+import org.springframework.data.redis.connection.RedisGeoCommands.GeoLocation;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,9 +29,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
-import static com.hmdp.utils.RedisConstants.CACHE_SHOP_KEY;
-import static com.hmdp.utils.RedisConstants.LOGIN_USER_KEY;
+import static com.hmdp.utils.RedisConstants.*;
 
 @SpringBootTest
 class HmDianpingApplicationTests {
@@ -48,6 +52,7 @@ class HmDianpingApplicationTests {
     private UserServiceImpl userService;
 
     private ExecutorService es = Executors.newFixedThreadPool(100);
+
 
 
     @Test
@@ -111,5 +116,28 @@ class HmDianpingApplicationTests {
         }
     }
 
+    @Test
+    void testLoadShopData(){
+        //1.查询店铺信息
+        List<Shop> list = shopService.list();
+        //2.把店铺分组，按typeId分组,typeId一致的放到一个集合
+        Map<Long,List<Shop>> map = list.stream().collect(Collectors.groupingBy(Shop::getTypeId));
+        //3.遍历map，获取每个typeId对应的店铺集合
+        for (Map.Entry<Long, List<Shop>> entry : map.entrySet()) {
+            //3.1 获取typeId
+            Long typeId = entry.getKey();
+            //3.2 获取店铺集合
+            List<Shop> value = entry.getValue();
+            String key = SHOP_GEO_KEY + typeId;
+            //3.3 把店铺集合转换为RedisGeoCommands.GeoLocation对象集合
+            List<GeoLocation<String>> locations = value.stream()
+                    .map(shop -> new GeoLocation<>(
+                            shop.getId().toString(),
+                            new Point(shop.getX(), shop.getY())))
+                    .collect(Collectors.toList());
+            //4.把店铺集合添加到Redis的Geo集合中
+            stringRedisTemplate.opsForGeo().add(key,locations);
+        }
+    }
 
 }

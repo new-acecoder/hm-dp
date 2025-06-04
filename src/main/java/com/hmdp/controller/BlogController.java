@@ -24,19 +24,13 @@ public class BlogController {
     private IBlogService blogService;
 
     /**
-     * 发布探店博文
+     * 发布探店博文，并推流
      * @param blog 博文内容
      * @return 返回博文ID
      */
     @PostMapping
     public Result saveBlog(@RequestBody Blog blog) {
-        // 获取登录用户
-        UserDTO user = UserHolder.getUser();
-        blog.setUserId(user.getId());
-        // 保存探店博文
-        blogService.save(blog);
-        // 返回id
-        return Result.ok(blog.getId());
+        return blogService.saveBlog(blog);
     }
 
     /**
@@ -110,4 +104,19 @@ public class BlogController {
             @RequestParam("id") Long id) {
         return blogService.queryBlogByUserId(current, id);
     }
+
+    /**
+     * 查询关注的用户的博文
+     * @param  max 最大ID（用于分页）
+     * @param offset 偏移量（用于分页）
+     * @return 博文列表
+     */
+    @GetMapping("/of/follow")
+    public Result queryBlogOfFollow(
+            @RequestParam("lastId") Long max,
+            @RequestParam(value = "offset",defaultValue = "0")Integer offset) {
+        return blogService.queryBlogOfFollow(max, offset);
+    }
+
+
 }
