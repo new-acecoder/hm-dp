@@ -111,4 +111,12 @@ public class UserController {
         return userService.queryUserById(userId);
     }
 
+    /**
+     * 签到功能
+     * @return
+     */
+    @PostMapping("/sign")
+    public Result sign() {
+        return userService.sign();
+    }
 }
